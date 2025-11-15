@@ -2,3 +2,6 @@ project_id = "bfnmvgwshqrsfnndwfry"
 
 [functions.ai-valuation]
 verify_jwt = false
+
+[functions.create-affiliate-user]
+verify_jwt = false
