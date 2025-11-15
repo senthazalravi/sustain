@@ -75,7 +75,7 @@ const ProductDetails = () => {
       .from("wallets")
       .select("balance")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (data) {
       setWalletBalance(data.balance);
@@ -89,12 +89,22 @@ const ProductDetails = () => {
       .from("listings")
       .select("*")
       .eq("id", id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       toast({
         title: "Error",
         description: "Failed to load listing",
+        variant: "destructive",
+      });
+      navigate("/marketplace");
+      return;
+    }
+
+    if (!data) {
+      toast({
+        title: "Not Found",
+        description: "This listing doesn't exist",
         variant: "destructive",
       });
       navigate("/marketplace");
@@ -113,7 +123,7 @@ const ProductDetails = () => {
       .select("role")
       .eq("user_id", user.id)
       .eq("role", "affiliate")
-      .single();
+      .maybeSingle();
 
     if (data) {
       setIsAffiliate(true);
@@ -130,7 +140,7 @@ const ProductDetails = () => {
       .select("link_code")
       .eq("affiliate_user_id", user.id)
       .eq("listing_id", id)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       setAffiliateLink(`${window.location.origin}/product/${id}?ref=${existing.link_code}`);
