@@ -51,25 +51,63 @@ const CreateListing = () => {
       return;
     }
 
+    if (!formData.title.trim()) {
+      toast({
+        title: "Title Required",
+        description: "Please enter a title for your listing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.category) {
+      toast({
+        title: "Category Required",
+        description: "Please select a category",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.condition) {
+      toast({
+        title: "Condition Required",
+        description: "Please select the item condition",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const priceValue = parseInt(formData.price || valuation?.ecoCoins || '0');
+    if (priceValue <= 0) {
+      toast({
+        title: "Price Required",
+        description: "Please set a price or use AI valuation",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Create listing in database
     const { error: insertError } = await supabase
       .from('listings')
       .insert({
         user_id: user.id,
         title: formData.title,
-        description: formData.description,
+        description: formData.description || '',
         category: formData.category,
         condition: formData.condition,
-        price_ecocoins: parseInt(formData.price || valuation?.ecoCoins || '0'),
+        price_ecocoins: priceValue,
         sustainability_impact: valuation?.sustainabilityImpact || null,
         photos: photos,
         status: 'active',
       });
 
     if (insertError) {
+      console.error('Insert error:', insertError);
       toast({
         title: "Error",
-        description: "Failed to create listing",
+        description: insertError.message || "Failed to create listing",
         variant: "destructive",
       });
       return;
@@ -103,14 +141,23 @@ const CreateListing = () => {
       return;
     }
 
+    if (!formData.title || !formData.category || !formData.condition) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in title, category, and condition before getting AI valuation",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setAnalyzingAI(true);
     try {
       const response = await supabase.functions.invoke('ai-valuation', {
         body: {
           imageUrl: photos[0],
-          title: formData.title || 'Product',
-          condition: formData.condition || 'good',
-          category: formData.category || 'general',
+          title: formData.title,
+          condition: formData.condition,
+          category: formData.category,
           description: formData.description,
         }
       });
@@ -120,6 +167,7 @@ const CreateListing = () => {
       }
 
       setValuation(response.data);
+      setFormData({ ...formData, price: response.data?.ecoCoins?.toString() || '' });
       setAiSuggested(true);
       toast({
         title: "AI Analysis Complete",
@@ -362,18 +410,36 @@ const CreateListing = () => {
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="price">Price (EcoCoins)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="price"
+                      type="number"
+                      min="1"
+                      placeholder="Enter price or use AI suggestion"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleAISuggest}
+                      disabled={analyzingAI || !photos.length || !user}
+                    >
+                      <Bot className="h-4 w-4 mr-2" />
+                      {analyzingAI ? "Analyzing..." : "AI Price"}
+                    </Button>
+                  </div>
+                  {aiSuggested && valuation && (
+                    <p className="text-sm text-muted-foreground">
+                      AI suggested: {valuation.ecoCoins} EcoCoins
+                    </p>
+                  )}
+                </div>
+
                 <div className="flex gap-3">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={handleAISuggest}
-                    disabled={analyzingAI || !photos.length || !user}
-                  >
-                    <Bot className="mr-2 h-4 w-4" />
-                    {analyzingAI ? "Analyzing..." : "Get AI Valuation"}
-                  </Button>
-                  <Button type="submit" className="flex-1">
+                  <Button type="submit" className="w-full" disabled={uploading}>
                     <Upload className="mr-2 h-4 w-4" />
                     Publish Listing
                   </Button>
