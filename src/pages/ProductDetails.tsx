@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Coins, Share2, Facebook, Twitter, Linkedin, Link as LinkIcon, Copy, Check, Wallet } from "lucide-react";
+import { Coins, Share2, Facebook, Twitter, Linkedin, Link as LinkIcon, Copy, Check, Wallet, Mail, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -28,6 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Separator } from "@/components/ui/separator";
 
 interface Listing {
   id: string;
@@ -161,6 +162,32 @@ const ProductDetails = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleNativeShare = async () => {
+    const url = affiliateLink || window.location.href;
+    const text = `Check out this amazing item: ${listing?.title}\n\nPrice: ${listing?.price_ecocoins} EcoCoins\n\n`;
+
+    // Check if native share is available (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: listing?.title || 'Product',
+          text: text,
+          url: url,
+        });
+        
+        toast({
+          title: "Shared!",
+          description: "Thanks for sharing",
+        });
+      } catch (error) {
+        // User cancelled or error occurred
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.error('Error sharing:', error);
+        }
+      }
+    }
+  };
+
   const shareOnSocial = (platform: string) => {
     const url = affiliateLink || window.location.href;
     const text = `Check out this item: ${listing?.title}`;
@@ -176,10 +203,20 @@ const ProductDetails = () => {
       case "linkedin":
         shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
         break;
+      case "whatsapp":
+        shareUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
+        break;
+      case "email":
+        shareUrl = `mailto:?subject=${encodeURIComponent(listing?.title || 'Check this out')}&body=${encodeURIComponent(text + '\n\n' + url)}`;
+        break;
     }
 
     if (shareUrl) {
-      window.open(shareUrl, "_blank", "width=600,height=400");
+      if (platform === "email") {
+        window.location.href = shareUrl;
+      } else {
+        window.open(shareUrl, "_blank", "width=600,height=400");
+      }
     }
   };
 
@@ -364,49 +401,95 @@ const ProductDetails = () => {
                 </AlertDialogContent>
               </AlertDialog>
 
-              {/* Social Sharing */}
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="lg" className="w-full">
-                    <Share2 className="mr-2 h-5 w-5" />
-                    Share Product
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Share this product</DialogTitle>
-                    <DialogDescription>
-                      Share on social media or copy the link
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="flex gap-2">
-                      <Button variant="outline" className="flex-1" onClick={() => shareOnSocial("facebook")}>
-                        <Facebook className="mr-2 h-4 w-4" />
-                        Facebook
+              {/* Social Sharing - Native on Mobile, Detailed on Desktop */}
+              {typeof navigator !== 'undefined' && navigator.share ? (
+                // Mobile: Use native share sheet
+                <Button variant="outline" size="lg" className="w-full" onClick={handleNativeShare}>
+                  <Share2 className="mr-2 h-5 w-5" />
+                  Share Product
+                </Button>
+              ) : (
+                // Desktop: Use detailed dialog
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="lg" className="w-full">
+                      <Share2 className="mr-2 h-5 w-5" />
+                      Share Product
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Share this product</DialogTitle>
+                      <DialogDescription>
+                        {isAffiliate 
+                          ? "Share your affiliate link to earn commissions!"
+                          : "Share on social media or copy the link"
+                        }
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      {/* Social Media Buttons */}
+                      <div>
+                        <p className="mb-2 text-sm font-medium text-foreground">Share on Social Media</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button variant="outline" onClick={() => shareOnSocial("facebook")}>
+                            <Facebook className="mr-2 h-4 w-4" />
+                            Facebook
+                          </Button>
+                          <Button variant="outline" onClick={() => shareOnSocial("twitter")}>
+                            <Twitter className="mr-2 h-4 w-4" />
+                            Twitter
+                          </Button>
+                          <Button variant="outline" onClick={() => shareOnSocial("linkedin")}>
+                            <Linkedin className="mr-2 h-4 w-4" />
+                            LinkedIn
+                          </Button>
+                          <Button variant="outline" onClick={() => shareOnSocial("whatsapp")}>
+                            <MessageCircle className="mr-2 h-4 w-4" />
+                            WhatsApp
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Email Share */}
+                      <Button variant="outline" className="w-full" onClick={() => shareOnSocial("email")}>
+                        <Mail className="mr-2 h-4 w-4" />
+                        Share via Email
                       </Button>
-                      <Button variant="outline" className="flex-1" onClick={() => shareOnSocial("twitter")}>
-                        <Twitter className="mr-2 h-4 w-4" />
-                        Twitter
-                      </Button>
-                      <Button variant="outline" className="flex-1" onClick={() => shareOnSocial("linkedin")}>
-                        <Linkedin className="mr-2 h-4 w-4" />
-                        Linkedin
-                      </Button>
+
+                      <Separator />
+
+                      {/* Copy Link */}
+                      <div>
+                        <p className="mb-2 text-sm font-medium text-foreground">
+                          {isAffiliate ? "Your Affiliate Link" : "Product Link"}
+                        </p>
+                        <div className="flex gap-2">
+                          <Input 
+                            value={affiliateLink || window.location.href} 
+                            readOnly 
+                            className="text-sm"
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => copyToClipboard(affiliateLink || window.location.href)}
+                          >
+                            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        {isAffiliate && (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            Earn 10% commission when someone buys through your link!
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Input value={affiliateLink || window.location.href} readOnly />
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => copyToClipboard(affiliateLink || window.location.href)}
-                      >
-                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  </DialogContent>
+                </Dialog>
+              )}
 
               {/* Affiliate Link for Affiliates */}
               {isAffiliate && affiliateLink && (
