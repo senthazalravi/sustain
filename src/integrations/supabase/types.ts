@@ -117,6 +117,41 @@ export type Database = {
           },
         ]
       }
+      escrow: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          order_id: string
+          released_at: string | null
+          status: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          order_id: string
+          released_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          order_id?: string
+          released_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escrow_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           category: string
@@ -162,6 +197,104 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          affiliate_link_id: string | null
+          amount_ecocoins: number
+          buyer_id: string
+          buyer_notes: string | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          listing_id: string
+          seller_id: string
+          shipped_at: string | null
+          status: string | null
+          tracking_number: string | null
+        }
+        Insert: {
+          affiliate_link_id?: string | null
+          amount_ecocoins: number
+          buyer_id: string
+          buyer_notes?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          listing_id: string
+          seller_id: string
+          shipped_at?: string | null
+          status?: string | null
+          tracking_number?: string | null
+        }
+        Update: {
+          affiliate_link_id?: string | null
+          amount_ecocoins?: number
+          buyer_id?: string
+          buyer_notes?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          listing_id?: string
+          seller_id?: string
+          shipped_at?: string | null
+          status?: string | null
+          tracking_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_affiliate_link_id_fkey"
+            columns: ["affiliate_link_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          order_id: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -179,6 +312,30 @@ export type Database = {
           created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          balance: number | null
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []

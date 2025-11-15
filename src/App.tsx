@@ -12,6 +12,8 @@ import FAQ from "./pages/FAQ";
 import HowItWorks from "./pages/HowItWorks";
 import ProductDetails from "./pages/ProductDetails";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
+import MyOrders from "./pages/MyOrders";
+import Wallet from "./pages/Wallet";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,8 @@ const App = () => (
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/product/:id" element={<ProductDetails />} />
             <Route path="/affiliate-dashboard" element={<AffiliateDashboard />} />
+            <Route path="/my-orders" element={<MyOrders />} />
+            <Route path="/wallet" element={<Wallet />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

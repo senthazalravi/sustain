@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Coins, Heart, LogOut, Menu, Search, User, BarChart3 } from "lucide-react";
+import { Coins, Heart, LogOut, Menu, Search, User, BarChart3, ShoppingBag, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
 import sustainLogo from "@/assets/sustain-logo.jpg";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +9,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -74,6 +75,18 @@ export const Navigation = () => {
             {user ? (
               <>
                 <div className="hidden md:flex items-center gap-2">
+                  <Link to="/wallet">
+                    <Button variant="ghost" size="sm">
+                      <Wallet className="h-4 w-4 mr-2" />
+                      Wallet
+                    </Button>
+                  </Link>
+                  <Link to="/my-orders">
+                    <Button variant="ghost" size="sm">
+                      <ShoppingBag className="h-4 w-4 mr-2" />
+                      Orders
+                    </Button>
+                  </Link>
                   {isAffiliate && (
                     <Link to="/affiliate-dashboard">
                       <Button variant="outline" size="sm">
@@ -82,9 +95,6 @@ export const Navigation = () => {
                       </Button>
                     </Link>
                   )}
-                  <span className="text-sm text-muted-foreground">
-                    {user.email}
-                  </span>
                   <Button variant="outline" size="sm" onClick={signOut}>
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
@@ -133,12 +143,49 @@ export const Navigation = () => {
                 <DropdownMenuItem asChild>
                   <Link to="/faq">FAQ</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/auth">Sign In</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/create-listing">Sell Now</Link>
-                </DropdownMenuItem>
+                {user ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/wallet">
+                        <Wallet className="h-4 w-4 mr-2" />
+                        Wallet
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/my-orders">
+                        <ShoppingBag className="h-4 w-4 mr-2" />
+                        My Orders
+                      </Link>
+                    </DropdownMenuItem>
+                    {isAffiliate && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/affiliate-dashboard">
+                          <BarChart3 className="h-4 w-4 mr-2" />
+                          Affiliate Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem asChild>
+                      <Link to="/create-listing">Sell Now</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={signOut}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/auth">Sign In</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/create-listing">Sell Now</Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
