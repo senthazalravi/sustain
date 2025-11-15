@@ -7,14 +7,85 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Bot, Camera, Coins, Upload } from "lucide-react";
-import { useState } from "react";
+import { Bot, Camera, Coins, Upload, X } from "lucide-react";
+import { useState, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const CreateListing = () => {
   const [aiSuggested, setAiSuggested] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const handleAISuggest = () => {
     setAiSuggested(true);
+  };
+
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !user) return;
+
+    if (photos.length + files.length > 10) {
+      toast({
+        title: "Too many photos",
+        description: "You can upload a maximum of 10 photos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+    const uploadedUrls: string[] = [];
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}-${i}.${fileExt}`;
+
+        const { error: uploadError, data } = await supabase.storage
+          .from('listing-photos')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('listing-photos')
+          .getPublicUrl(fileName);
+
+        uploadedUrls.push(publicUrl);
+      }
+
+      setPhotos([...photos, ...uploadedUrls]);
+      toast({
+        title: "Photos uploaded",
+        description: `Successfully uploaded ${uploadedUrls.length} photo(s)`,
+      });
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload photos. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setPhotos(photos.filter((_, i) => i !== index));
   };
 
   return (
@@ -38,18 +109,57 @@ const CreateListing = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label>Photos</Label>
+                  <Label>Photos (minimum 3 required)</Label>
                   <div className="grid grid-cols-3 gap-4">
-                    <Button 
-                      variant="outline" 
-                      className="h-32 flex-col gap-2 border-dashed"
-                    >
-                      <Camera className="h-8 w-8 text-muted-foreground" />
-                      <span className="text-sm">Add Photo</span>
-                    </Button>
+                    {photos.map((photo, index) => (
+                      <div key={index} className="relative h-32">
+                        <img 
+                          src={photo} 
+                          alt={`Upload ${index + 1}`} 
+                          className="h-full w-full rounded-lg object-cover"
+                        />
+                        <Button
+                          size="icon"
+                          variant="destructive"
+                          className="absolute -right-2 -top-2 h-6 w-6"
+                          onClick={() => handleRemovePhoto(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                        {index === 0 && (
+                          <Badge className="absolute bottom-2 left-2 text-xs">
+                            Cover
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                    {photos.length < 10 && (
+                      <>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleFileChange}
+                          className="hidden"
+                        />
+                        <Button 
+                          type="button"
+                          variant="outline" 
+                          className="h-32 flex-col gap-2 border-dashed"
+                          onClick={handlePhotoClick}
+                          disabled={uploading || !user}
+                        >
+                          <Camera className="h-8 w-8 text-muted-foreground" />
+                          <span className="text-sm">
+                            {uploading ? "Uploading..." : "Add Photo"}
+                          </span>
+                        </Button>
+                      </>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Upload up to 10 photos. First photo will be the cover image.
+                    Upload 3-10 photos. First photo will be the cover image.
                   </p>
                 </div>
 
