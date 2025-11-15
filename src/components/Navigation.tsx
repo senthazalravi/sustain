@@ -56,9 +56,6 @@ export const Navigation = () => {
             <Link to="/how-it-works" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               How It Works
             </Link>
-            <Link to="/about" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-              About
-            </Link>
             <Link to="/faq" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               FAQ
             </Link>
@@ -136,9 +133,6 @@ export const Navigation = () => {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/how-it-works">How It Works</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/about">About</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/faq">FAQ</Link>
