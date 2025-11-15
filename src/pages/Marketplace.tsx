@@ -1,85 +1,67 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Coins, Heart, Search, SlidersHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock data for demonstration
-const mockListings = [
-  {
-    id: 1,
-    title: "Vintage Canon AE-1 Camera",
-    category: "Electronics",
-    condition: "Good",
-    price: 150,
-    coins: 1500,
-    image: "https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=400",
-    seller: "PhotoLover",
-    rating: 4.8,
-  },
-  {
-    id: 2,
-    title: "Designer Leather Jacket",
-    category: "Fashion",
-    condition: "Like New",
-    price: 200,
-    coins: 2000,
-    image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400",
-    seller: "Fashionista",
-    rating: 5.0,
-  },
-  {
-    id: 3,
-    title: "Wooden Coffee Table",
-    category: "Home & Garden",
-    condition: "Good",
-    price: 80,
-    coins: 800,
-    image: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=400",
-    seller: "HomeDecor",
-    rating: 4.5,
-  },
-  {
-    id: 4,
-    title: "Apple iPad Pro 2020",
-    category: "Electronics",
-    condition: "Like New",
-    price: 450,
-    coins: 4500,
-    image: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=400",
-    seller: "TechGuru",
-    rating: 4.9,
-  },
-  {
-    id: 5,
-    title: "Vintage Vinyl Records Set",
-    category: "Music",
-    condition: "Good",
-    price: 120,
-    coins: 1200,
-    image: "https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=400",
-    seller: "MusicCollector",
-    rating: 4.7,
-  },
-  {
-    id: 6,
-    title: "Mountain Bike - Trek",
-    category: "Sports",
-    condition: "Good",
-    price: 350,
-    coins: 3500,
-    image: "https://images.unsplash.com/photo-1576435728678-68d0fbf94e91?w=400",
-    seller: "OutdoorLife",
-    rating: 4.6,
-  },
-];
+interface Listing {
+  id: string;
+  title: string;
+  category: string;
+  condition: string;
+  price_ecocoins: number;
+  photos: string[];
+  description: string;
+}
 
 const Marketplace = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+
+  useEffect(() => {
+    fetchListings();
+  }, []);
+
+  const fetchListings = async () => {
+    const { data, error } = await supabase
+      .from("listings")
+      .select("*")
+      .eq("status", "active")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load listings",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    setListings(data || []);
+    setLoading(false);
+  };
+
+  const filteredListings = listings.filter(listing => {
+    const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         listing.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || 
+                           listing.category.toLowerCase() === categoryFilter.toLowerCase();
+    return matchesSearch && matchesCategory;
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -96,11 +78,13 @@ const Marketplace = () => {
             <Input 
               placeholder="Search for items..." 
               className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           
           <div className="flex gap-3">
-            <Select defaultValue="all">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
@@ -110,6 +94,8 @@ const Marketplace = () => {
                 <SelectItem value="fashion">Fashion</SelectItem>
                 <SelectItem value="home">Home & Garden</SelectItem>
                 <SelectItem value="sports">Sports</SelectItem>
+                <SelectItem value="books">Books</SelectItem>
+                <SelectItem value="toys">Toys</SelectItem>
               </SelectContent>
             </Select>
             
@@ -120,68 +106,88 @@ const Marketplace = () => {
           </div>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {mockListings.map((listing) => (
-            <Card 
-              key={listing.id} 
-              className="overflow-hidden transition-all hover:shadow-lg cursor-pointer"
-              onClick={() => navigate(`/product/${listing.id}`)}
-            >
-              <CardHeader className="p-0">
-                <div className="relative">
-                  <img 
-                    src={listing.image} 
-                    alt={listing.title}
-                    className="h-64 w-full object-cover"
-                  />
-                  <Button 
-                    size="icon" 
-                    variant="secondary" 
-                    className="absolute right-3 top-3 h-9 w-9 rounded-full"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Heart className="h-4 w-4" />
-                  </Button>
-                  <Badge className="absolute left-3 top-3 bg-primary">
-                    {listing.condition}
+        {loading ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Card key={i} className="overflow-hidden">
+                <div className="h-64 w-full animate-pulse bg-muted" />
+                <CardContent className="p-4">
+                  <div className="h-4 w-20 animate-pulse bg-muted rounded mb-2" />
+                  <div className="h-6 w-full animate-pulse bg-muted rounded mb-2" />
+                  <div className="h-4 w-32 animate-pulse bg-muted rounded" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : filteredListings.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground text-lg">No listings found</p>
+            <Button className="mt-4" onClick={() => navigate("/create-listing")}>
+              Create Your First Listing
+            </Button>
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredListings.map((listing) => (
+              <Card 
+                key={listing.id} 
+                className="overflow-hidden transition-all hover:shadow-lg cursor-pointer"
+                onClick={() => navigate(`/product/${listing.id}`)}
+              >
+                <CardHeader className="p-0">
+                  <div className="relative">
+                    <img 
+                      src={listing.photos?.[0] || "https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=400"} 
+                      alt={listing.title}
+                      className="h-64 w-full object-cover"
+                    />
+                    <Button 
+                      size="icon" 
+                      variant="secondary" 
+                      className="absolute right-3 top-3 h-9 w-9 rounded-full"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Heart className="h-4 w-4" />
+                    </Button>
+                    <Badge className="absolute left-3 top-3 bg-primary">
+                      {listing.condition}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="p-4">
+                  <Badge variant="outline" className="mb-2">
+                    {listing.category}
                   </Badge>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="p-4">
-                <Badge variant="outline" className="mb-2">
-                  {listing.category}
-                </Badge>
-                <h3 className="mb-2 font-semibold text-foreground line-clamp-1">
-                  {listing.title}
-                </h3>
-                <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>{listing.seller}</span>
-                  <span>•</span>
-                  <span>⭐ {listing.rating}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
+                  <h3 className="mb-2 font-semibold text-foreground line-clamp-1">
+                    {listing.title}
+                  </h3>
+                  <p className="mb-3 text-sm text-muted-foreground line-clamp-2">
+                    {listing.description}
+                  </p>
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1 text-lg font-bold text-primary">
                       <Coins className="h-5 w-5" />
-                      {listing.coins}
+                      {listing.price_ecocoins}
                     </div>
+                    <Button onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/product/${listing.id}`);
+                    }}>View Details</Button>
                   </div>
-                  <Button onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/product/${listing.id}`);
-                  }}>View Details</Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
-        <div className="mt-12 text-center">
-          <Button variant="outline" size="lg">
-            Load More Listings
-          </Button>
-        </div>
+        {!loading && filteredListings.length > 0 && (
+          <div className="mt-12 text-center">
+            <p className="text-muted-foreground">
+              Showing {filteredListings.length} listing{filteredListings.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+        )}
       </main>
       
       <Footer />
