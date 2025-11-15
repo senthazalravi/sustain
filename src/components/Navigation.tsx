@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { Coins, Heart, Menu, Search, User } from "lucide-react";
+import { Coins, Heart, LogOut, Menu, Search, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import sustainLogo from "@/assets/sustain-logo.jpg";
+import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export const Navigation = () => {
+  const { user, signOut } = useAuth();
+  
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
@@ -45,18 +48,41 @@ export const Navigation = () => {
             <Button variant="ghost" size="icon" className="hidden md:flex">
               <Heart className="h-5 w-5" />
             </Button>
-            <Link to="/auth">
-              <Button variant="outline" className="hidden md:flex">
-                <User className="h-4 w-4 mr-2" />
-                Sign In
-              </Button>
-            </Link>
-            <Link to="/create-listing">
-              <Button className="hidden md:flex">
-                <Coins className="h-4 w-4 mr-2" />
-                Sell Now
-              </Button>
-            </Link>
+            
+            {user ? (
+              <>
+                <div className="hidden md:flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    {user.email}
+                  </span>
+                  <Button variant="outline" size="sm" onClick={signOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+                <Link to="/create-listing">
+                  <Button className="hidden md:flex">
+                    <Coins className="h-4 w-4 mr-2" />
+                    Sell Now
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="outline" className="hidden md:flex">
+                    <User className="h-4 w-4 mr-2" />
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/create-listing">
+                  <Button className="hidden md:flex">
+                    <Coins className="h-4 w-4 mr-2" />
+                    Sell Now
+                  </Button>
+                </Link>
+              </>
+            )}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
