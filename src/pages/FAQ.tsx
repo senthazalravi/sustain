@@ -14,7 +14,7 @@ const faqCategories = [
     category: "Getting Started",
     questions: [
       {
-        question: "What is is Sustain?",
+        question: "What is Sustain?",
         answer: "Sustain is a sustainable marketplace where you can buy and sell pre-owned items using our eco coins currency. Our AI-powered platform helps price items fairly, reduces waste, and builds a circular economy."
       },
       {
