@@ -327,6 +327,20 @@ const ProductDetails = () => {
 
           {/* Product Info */}
           <div className="space-y-6">
+            {/* Affiliate Status Badge */}
+            {isAffiliate && (
+              <Card className="border-green-500 bg-green-50 dark:bg-green-950">
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-green-600 hover:bg-green-700">Affiliate Mode</Badge>
+                    <span className="text-sm text-green-700 dark:text-green-300">
+                      Share this product to earn 10% commission!
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <div>
               <h1 className="mb-2 text-4xl font-bold text-foreground">{listing.title}</h1>
               <div className="flex items-center gap-2">
