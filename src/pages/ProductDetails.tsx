@@ -1,13 +1,13 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Coins, Share2, Facebook, Twitter, Linkedin, Link as LinkIcon, Copy, Check } from "lucide-react";
+import { Coins, Share2, Facebook, Twitter, Linkedin, Link as LinkIcon, Copy, Check, Wallet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -18,6 +18,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Listing {
   id: string;
@@ -34,21 +44,42 @@ interface Listing {
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
+  const [purchasing, setPurchasing] = useState(false);
+  const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
   const [isAffiliate, setIsAffiliate] = useState(false);
   const [affiliateLink, setAffiliateLink] = useState("");
   const [selectedImage, setSelectedImage] = useState(0);
   const [copied, setCopied] = useState(false);
 
+  const affiliateRef = searchParams.get('ref');
+
   useEffect(() => {
     fetchListing();
     if (user) {
       checkAffiliateStatus();
+      fetchWalletBalance();
     }
   }, [id, user]);
+
+  const fetchWalletBalance = async () => {
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("wallets")
+      .select("balance")
+      .eq("user_id", user.id)
+      .single();
+
+    if (data) {
+      setWalletBalance(data.balance);
+    }
+  };
 
   const fetchListing = async () => {
     if (!id) return;
@@ -152,6 +183,60 @@ const ProductDetails = () => {
     }
   };
 
+  const handlePurchase = async () => {
+    if (!user) {
+      toast({
+        title: "Sign In Required",
+        description: "Please sign in to make a purchase",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (walletBalance < listing!.price_ecocoins) {
+      toast({
+        title: "Insufficient Balance",
+        description: "You don't have enough EcoCoins",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setShowPurchaseDialog(true);
+  };
+
+  const confirmPurchase = async () => {
+    setPurchasing(true);
+
+    const { data, error } = await supabase.functions.invoke("process-purchase", {
+      body: {
+        listingId: id,
+        affiliateLinkCode: affiliateRef,
+      },
+    });
+
+    if (error || data?.error) {
+      toast({
+        title: "Purchase Failed",
+        description: data?.error || "Failed to complete purchase",
+        variant: "destructive",
+      });
+      setPurchasing(false);
+      setShowPurchaseDialog(false);
+      return;
+    }
+
+    toast({
+      title: "Purchase Successful!",
+      description: "Your order has been placed successfully",
+    });
+
+    setPurchasing(false);
+    setShowPurchaseDialog(false);
+    navigate("/my-orders");
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -234,10 +319,50 @@ const ProductDetails = () => {
             )}
 
             <div className="space-y-3">
-              <Button size="lg" className="w-full">
+              {/* Wallet Balance Display */}
+              {user && (
+                <Card className="border-muted">
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Your Balance:</span>
+                      <div className="flex items-center gap-2">
+                        <Wallet className="h-4 w-4 text-primary" />
+                        <span className="font-semibold text-foreground">{walletBalance} EC</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <Button size="lg" className="w-full" onClick={handlePurchase}>
                 <Coins className="mr-2 h-5 w-5" />
                 Buy Now
               </Button>
+
+              {/* Purchase Confirmation Dialog */}
+              <AlertDialog open={showPurchaseDialog} onOpenChange={setShowPurchaseDialog}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirm Purchase</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      You are about to purchase <strong>{listing.title}</strong> for{" "}
+                      <strong>{listing.price_ecocoins} EcoCoins</strong>.
+                      <br />
+                      <br />
+                      Your new balance will be: <strong>{walletBalance - listing.price_ecocoins} EC</strong>
+                      <br />
+                      <br />
+                      The coins will be held in escrow until you confirm delivery.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={purchasing}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmPurchase} disabled={purchasing}>
+                      {purchasing ? "Processing..." : "Confirm Purchase"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
 
               {/* Social Sharing */}
               <Dialog>
