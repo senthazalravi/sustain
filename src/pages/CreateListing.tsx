@@ -24,10 +24,74 @@ const CreateListing = () => {
     category: '',
     condition: '',
     description: '',
+    price: '',
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to create a listing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (photos.length === 0) {
+      toast({
+        title: "Photos Required",
+        description: "Please upload at least one photo",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create listing in database
+    const { error: insertError } = await supabase
+      .from('listings')
+      .insert({
+        user_id: user.id,
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        condition: formData.condition,
+        price_ecocoins: parseInt(formData.price || valuation?.ecoCoins || '0'),
+        sustainability_impact: valuation?.sustainabilityImpact || null,
+        photos: photos,
+        status: 'active',
+      });
+
+    if (insertError) {
+      toast({
+        title: "Error",
+        description: "Failed to create listing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Listing Created!",
+      description: "Your item has been listed successfully.",
+    });
+
+    // Reset form
+    setPhotos([]);
+    setFormData({
+      title: '',
+      category: '',
+      condition: '',
+      description: '',
+      price: '',
+    });
+    setValuation(null);
+    setAiSuggested(false);
+  };
 
   const handleAISuggest = async () => {
     if (!photos.length) {
@@ -146,6 +210,7 @@ const CreateListing = () => {
           <p className="text-muted-foreground">Let AI help you create the perfect listing</p>
         </div>
 
+        <form onSubmit={handleSubmit}>
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <Card>
@@ -401,6 +466,7 @@ const CreateListing = () => {
             </Card>
           </div>
         </div>
+        </form>
       </main>
       
       <Footer />

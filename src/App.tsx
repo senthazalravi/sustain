@@ -10,6 +10,8 @@ import Auth from "./pages/Auth";
 import CreateListing from "./pages/CreateListing";
 import FAQ from "./pages/FAQ";
 import HowItWorks from "./pages/HowItWorks";
+import ProductDetails from "./pages/ProductDetails";
+import AffiliateDashboard from "./pages/AffiliateDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +30,8 @@ const App = () => (
             <Route path="/create-listing" element={<CreateListing />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/affiliate-dashboard" element={<AffiliateDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

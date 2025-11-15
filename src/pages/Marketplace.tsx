@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Coins, Heart, Search, SlidersHorizontal } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // Mock data for demonstration
 const mockListings = [
@@ -78,6 +79,7 @@ const mockListings = [
 ];
 
 const Marketplace = () => {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -120,7 +122,11 @@ const Marketplace = () => {
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {mockListings.map((listing) => (
-            <Card key={listing.id} className="overflow-hidden transition-all hover:shadow-lg">
+            <Card 
+              key={listing.id} 
+              className="overflow-hidden transition-all hover:shadow-lg cursor-pointer"
+              onClick={() => navigate(`/product/${listing.id}`)}
+            >
               <CardHeader className="p-0">
                 <div className="relative">
                   <img 
@@ -132,6 +138,7 @@ const Marketplace = () => {
                     size="icon" 
                     variant="secondary" 
                     className="absolute right-3 top-3 h-9 w-9 rounded-full"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <Heart className="h-4 w-4" />
                   </Button>
@@ -160,7 +167,10 @@ const Marketplace = () => {
                       {listing.coins}
                     </div>
                   </div>
-                  <Button>View Details</Button>
+                  <Button onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/product/${listing.id}`);
+                  }}>View Details</Button>
                 </div>
               </CardContent>
             </Card>

@@ -1,8 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { Coins, Heart, LogOut, Menu, Search, User } from "lucide-react";
+import { Coins, Heart, LogOut, Menu, Search, User, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import sustainLogo from "@/assets/sustain-logo.jpg";
 import { useAuth } from "@/hooks/useAuth";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +14,26 @@ import {
 
 export const Navigation = () => {
   const { user, signOut } = useAuth();
+  const [isAffiliate, setIsAffiliate] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      checkAffiliateStatus();
+    }
+  }, [user]);
+
+  const checkAffiliateStatus = async () => {
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "affiliate")
+      .single();
+
+    setIsAffiliate(!!data);
+  };
   
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -52,6 +74,14 @@ export const Navigation = () => {
             {user ? (
               <>
                 <div className="hidden md:flex items-center gap-2">
+                  {isAffiliate && (
+                    <Link to="/affiliate-dashboard">
+                      <Button variant="outline" size="sm">
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        Dashboard
+                      </Button>
+                    </Link>
+                  )}
                   <span className="text-sm text-muted-foreground">
                     {user.email}
                   </span>
