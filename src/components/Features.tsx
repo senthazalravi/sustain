@@ -40,7 +40,7 @@ export const Features = () => {
       <div className="container mx-auto px-4">
         <div className="mb-16 text-center">
           <h2 className="mb-4 text-4xl font-bold text-foreground md:text-5xl">
-            Why Choose Peer2Peer Eco?
+            Why Choose Sustain?
           </h2>
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
             A smarter, more sustainable way to buy and sell. Powered by AI, secured by technology, driven by community.
